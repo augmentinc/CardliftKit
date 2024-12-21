@@ -26,13 +26,9 @@ The **CardliftKit SDK** is a comprehensive framework designed to simplify form d
 
 ## Integration Steps
 
-To integrate `CardliftKit` into your project, follow these steps:
-
-### 0. Adding a Safari Extension Target
-
 You will need to have a Safari Web Extension target added to your iOS project to use the Card Lift iOS SDK. You can do so using the following steps:
 
-1. **Create a New Safari Web Extension Target**:
+### 1. **Create a New Safari Web Extension Target**:
 
     - In Xcode, go to **File > New > Target**.
     - Select **Safari Web Extension** from the list of available targets.
@@ -41,61 +37,7 @@ You will need to have a Safari Web Extension target added to your iOS project to
         - Ensure the **Team** and **Bundle Identifier** match your app.
         - Click **Finish**.
 
-2. **Enable App Groups for the Extension**:
-
-    - Select your new Safari web extension target in the **Project Navigator**.
-    - Go to the **Signing & Capabilities** tab.
-    - Add the **App Groups** capability.
-    - Select the same App Group (e.g., `group.com.mycompany.myapp`) that you configured for the main app.
-
-3. **Modify the Principal Class**:
-
-    - Open the extension’s `Info.plist` file.
-    - Locate the `NSExtensionPrincipalClass` key.
-    - Set the value to your handler class, typically `$(PRODUCT_MODULE_NAME).SafariWebExtensionHandler`.
-
-4. **Set Up the Web Extension Handler**:
-
-    - Replace the default `SafariWebExtensionHandler.swift` with the following:
-
-        ```swift
-        import CardliftKit
-        import SafariServices
-
-        class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
-            private let router = WebExtensionMessageRouter()
-
-            override init() {
-                super.init()
-                // Register CardliftKit handlers
-                CardliftKit.setup(router: router)
-            }
-
-            func beginRequest(with context: NSExtensionContext) {
-                guard let request = context.inputItems.first as? NSExtensionItem,
-                      let message = request.userInfo?[SFExtensionMessageKey] as? [String: Any],
-                      let name = message["name"] as? String else {
-                    context.completeRequest(returningItems: nil)
-                    return
-                }
-
-                let data = message["data"] ?? [String: Any]()
-                router.handleMessage(name: name, data: data) { response in
-                    let responseItem = NSExtensionItem()
-                    responseItem.userInfo = [SFExtensionMessageKey: response]
-                    context.completeRequest(returningItems: [responseItem])
-                }
-            }
-        }
-        ```
-
-5. **Build and Run**:
-    - Build your project to ensure the Safari web extension target is correctly configured.
-    - Run the app, and verify that the extension is listed under **Safari > Preferences > Extensions**.
-
-This setup enables seamless communication between your Safari web extension and the main app using `CardliftKit`.
-
-### 1. Install the Package
+### 2. Install the Package
 
 Use Swift Package Manager (SPM) to add `CardliftKit` to your project:
 
@@ -104,14 +46,14 @@ Use Swift Package Manager (SPM) to add `CardliftKit` to your project:
 3. Enter the Git repository URL for `CardliftKit`.
 4. Select the target(s) where you want to add the package.
 
-### 2. Configure App Groups
+### 3. Configure App Groups
 
 1. In your Xcode project, go to your app's **Signing & Capabilities** tab.
 2. Add a new capability for **App Groups**.
 3. Create or select an App Group (e.g., `group.com.mycompany.myapp`).
 4. Ensure the same App Group is added to both the **main app** and **Safari web extension** targets.
 
-### 3. Configure `CardliftKit`
+### 4. Configure `CardliftKit`
 
 Call `CardliftKit.configure` at app launch (e.g., in `@main` or `AppDelegate`):
 
