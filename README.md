@@ -6,84 +6,136 @@ The **CardliftKit SDK** is a comprehensive framework designed to simplify form d
 
 ## Features
 
--   **Shared Data Configuration**: Store and retrieve sensitive card metadata securely using a shared App Group.
--   **Web Extension Handlers**: Enable Safari web extensions to communicate with the main app effortlessly.
--   **Form Data Validation**: Validate user input for correctness and completeness.
--   **Metadata Parsing**: Compute `CardMetaData` from user-provided form data.
+- **Secure Storage**: Store and retrieve sensitive card metadata securely using iOS Keychain
+- **Web Extension Handlers**: Enable Safari web extensions to communicate with the main app effortlessly
+- **Form Data Validation**: Validate user input for correctness and completeness
+- **Metadata Parsing**: Compute `CardMetaData` from user-provided form data with comprehensive field support
 
 ---
 
 ## Table of Contents
 
-0. [Adding a Safari Extension Target](#0-adding-a-safari-extension-target)
 1. [Integration Steps](#integration-steps)
-2. [Why App Groups Are Important](#why-app-groups-are-important)
+2. [Security & Data Storage](#security--data-storage)
 3. [Public API Overview](#public-api-overview)
-4. [Validation and Parsing](#validation-and-parsing)
-5. [Example Usage](#example-usage)
+4. [Card Data Models](#card-data-models)
+5. [Validation and Parsing](#validation-and-parsing)
+6. [Example Usage](#example-usage)
 
 ---
 
 ## Integration Steps
 
-You will need to have a Safari Web Extension target added to your iOS project to use the Card Lift iOS SDK. You can do so using the following steps:
-
 ### 1. **Create a New Safari Web Extension Target**:
 
-    - In Xcode, go to **File > New > Target**.
-    - Select **Safari Web Extension** from the list of available targets.
-    - Click **Next** and configure the target:
-        - Provide a **Product Name** (e.g., `MyAppExtension`).
-        - Ensure the **Team** and **Bundle Identifier** match your app.
-        - Click **Finish**.
+- In Xcode, go to **File > New > Target**
+- Select **Safari Web Extension** from the list of available targets
+- Click **Next** and configure the target:
+  - Provide a **Product Name** (e.g., `MyAppExtension`)
+  - Ensure the **Team** and **Bundle Identifier** match your app
+  - Click **Finish**
 
 ### 2. Install the Package
 
-Use Swift Package Manager (SPM) to add `CardliftKit` to your project:
+Add CardliftKit to your project using CocoaPods:
 
-1. Open Xcode.
-2. Go to **File > Add Packages**.
-3. Enter the Git repository URL for `CardliftKit`.
-4. Select the target(s) where you want to add the package.
+1. If you haven't already, install CocoaPods:
+
+   ```bash
+   sudo gem install cocoapods
+   ```
+
+2. Create a Podfile in your project directory if you don't have one:
+
+   ```bash
+   pod init
+   ```
+
+3. Add CardliftKit to your Podfile:
+
+   ```ruby
+   target 'YourApp' do
+      pod 'CardliftKit', :git => 'https://github.com/augmentinc/CardliftKit.git', :branch => 'main'
+   end
+
+   target 'YourAppExtension' do
+     pod 'CardliftKit', :git => 'https://github.com/augmentinc/CardliftKit.git', :branch => 'main'
+   end
+   ```
+
+4. Install the dependencies:
+
+   ```bash
+   pod install
+   ```
+
+5. Open the `.xcworkspace` file that CocoaPods created (not the `.xcodeproj`).
 
 ### 3. Configure App Groups
 
-1. In your Xcode project, go to your app's **Signing & Capabilities** tab.
-2. Add a new capability for **App Groups**.
-3. Create or select an App Group (e.g., `group.com.mycompany.myapp`).
-4. Ensure the same App Group is added to both the **main app** and **Safari web extension** targets.
+1. In your Xcode project, go to your app's **Signing & Capabilities** tab
+2. Add a new capability for **App Groups**
+3. Create or select an App Group (e.g., `group.com.mycompany.myapp`)
+4. Ensure the same App Group is added to both the **main app** and **Safari web extension** targets
 
-### 4. Configure `CardliftKit`
+---
 
-Call `CardliftKit.configure` at app launch (e.g., in `@main` or `AppDelegate`):
+## Security & Data Storage
+
+CardliftKit uses iOS Keychain for secure storage:
+
+- **Encrypted Storage**: All sensitive card data is encrypted in the Keychain
+- **Access Control**: Only authorized app components can access the data
+- **App Group Scoping**: Keychain items are scoped to your app group
+- **Automatic Data Protection**: Leverages iOS's built-in Keychain security
+
+### Configuration
+
+Initialize the SDK with your App Group identifier:
 
 ```swift
 import CardliftKit
 
-@main
-struct MyApp: App {
-    init() {
-        CardliftKit.configure(sharedDataGroupIdentifier: "group.com.mycompany.myapp")
-    }
-
-    var body: some Scene {
-        WindowGroup {
-            ContentView()
-        }
-    }
-}
+CardliftKit.configure(serviceIdentifier: "group.com.mycompany.myapp")
 ```
 
 ---
 
-## Why App Groups Are Important
+## Card Data Models
 
-App Groups enable secure data sharing between the main app and extension targets. `CardliftKit` uses App Groups to:
+### CardMetaData
 
--   Store card metadata securely in a shared container (`UserDefaults`).
--   Allow the Safari web extension to access this metadata.
+The SDK provides a comprehensive `CardMetaData` model that includes:
 
-Without configuring App Groups, your app and extension won’t be able to share data, breaking the integration.
+- Card Details:
+
+  - `cardNumber`
+  - `cardExpirationDate` (multiple formats)
+  - `cardCvc`
+  - `cardType`
+
+- Personal Information:
+
+  - `firstName`, `lastName`, `name`, `title`
+  - `email`, `phone`
+  - `nickname`
+
+- Address Information:
+  - `address`, `address2`
+  - `city`, `state`, `stateFull`
+  - `country`, `countryFull`
+  - `zip`
+
+### Supported Card Types
+
+```swift
+public enum CardType: String {
+    case visa = "VISA"
+    case mastercard = "MASTERCARD"
+    case american = "AMERICAN"
+    case discover = "DISCOVER"
+}
+```
 
 ---
 
@@ -92,10 +144,8 @@ Without configuring App Groups, your app and extension won’t be able to share 
 ### 1. Configuration
 
 ```swift
-CardliftKit.configure(sharedDataGroupIdentifier: String)
+CardliftKit.configure(serviceIdentifier: String)
 ```
-
-Sets the shared App Group for storing and retrieving card metadata.
 
 ### 2. Web Extension Setup
 
@@ -103,72 +153,27 @@ Sets the shared App Group for storing and retrieving card metadata.
 CardliftKit.setup(router: WebExtensionMessageRouter)
 ```
 
-Registers message handlers for Safari web extensions.
-
-### 3. Card Metadata Access
+### 3. Card Metadata Management
 
 ```swift
+// Save metadata
 CardliftKit.saveCardMetaData(_ metaData: CardMetaData)
-CardliftKit.getCardMetaData() -> CardMetaData?
+
+// Retrieve metadata
+let metadata = CardliftKit.getCardMetaData()
+
+// Clear metadata
 CardliftKit.clearCardMetaData()
 ```
-
--   **`saveCardMetaData`**: Saves metadata to the shared storage.
--   **`getCardMetaData`**: Retrieves saved metadata, if any.
--   **`clearCardMetaData`**: Clears the stored metadata.
 
 ### 4. Validation
 
 ```swift
-CardliftKit.validateAllFields(_ formData: CardliftCardFormData) -> [String: String]
-CardliftKit.validateField(_ field: String, in formData: CardliftCardFormData, errors: inout [String: String])
-```
-
--   **`validateAllFields`**: Validates all fields in `CardliftCardFormData` and returns errors.
--   **`validateField`**: Validates a single field and updates an errors dictionary.
-
-### 5. Metadata Parsing
-
-```swift
-CardliftKit.computeCardMetaData(from formData: CardliftCardFormData) -> CardMetaData?
-```
-
-Parses and computes `CardMetaData` from the provided form data.
-
----
-
-## Validation and Parsing
-
-### Validation
-
-Use `validateAllFields` to validate the entire form at once:
-
-```swift
+// Validate all fields
 let errors = CardliftKit.validateAllFields(formData)
-if errors.isEmpty {
-    print("All fields are valid.")
-} else {
-    print("Validation errors:", errors)
-}
-```
 
-Or validate individual fields as they change:
-
-```swift
-CardliftKit.validateField("firstName", in: formData, errors: &errors)
-```
-
-### Metadata Parsing
-
-Parse user-provided form data into `CardMetaData`:
-
-```swift
-if let metaData = CardliftKit.computeCardMetaData(from: formData) {
-    print("Computed CardMetaData:", metaData)
-    CardliftKit.saveCardMetaData(metaData)
-} else {
-    print("Invalid form data. Unable to compute metadata.")
-}
+// Validate specific field
+CardliftKit.validateField("fieldName", in: formData, errors: &errors)
 ```
 
 ---
@@ -183,7 +188,7 @@ import CardliftKit
 @main
 struct MyApp: App {
     init() {
-        CardliftKit.configure(sharedDataGroupIdentifier: "group.com.mycompany.myapp")
+        CardliftKit.configure(serviceIdentifier: "group.com.mycompany.myapp")
     }
 
     var body: some Scene {
@@ -194,52 +199,95 @@ struct MyApp: App {
 }
 ```
 
-### Validating Form Data
-
-```swift
-var formData = CardliftCardFormData()
-formData.firstName = "John"
-formData.lastName = "Doe"
-
-let errors = CardliftKit.validateAllFields(formData)
-if errors.isEmpty {
-    print("All fields are valid.")
-} else {
-    print("Validation errors:", errors)
-}
-```
-
-### Computing and Saving Metadata
-
-```swift
-if let metaData = CardliftKit.computeCardMetaData(from: formData) {
-    CardliftKit.saveCardMetaData(metaData)
-    print("Metadata saved successfully.")
-}
-```
-
-### Clearing Metadata
-
-```swift
-CardliftKit.clearCardMetaData()
-```
-
-### Web Extension Integration
-
-In your Safari web extension target:
+### Safari Web Extension Setup
 
 ```swift
 import CardliftKit
-import Foundation
 import SafariServices
 
 // That’s it!
 // This minimal file is all you need to maintain in your target.
 final class SafariWebExtensionHandler: CardliftWebExtensionHandler {}
-
 // The extension Info.plist typically references "$(PRODUCT_MODULE_NAME).SafariWebExtensionHandler"
 // as the NSExtensionPrincipalClass, so this extension will be recognized.
-
 ```
 
+### Form Validation
+
+```swift
+var formData = CardliftCardFormData()
+formData.firstName = "John"
+formData.lastName = "Doe"
+formData.cardNumber = "4111111111111111"
+formData.expiry = "12/25"
+formData.cvv = "123"
+
+let errors = CardliftKit.validateAllFields(formData)
+if errors.isEmpty {
+    if let metaData = CardliftKit.computeCardMetaData(from: formData) {
+        CardliftKit.saveCardMetaData(metaData)
+    }
+}
+```
+
+### Safari Extension Build Files
+
+`extension-build-<version>.zip` file containing the necessary Safari extension files. Follow these steps to add them to your project:
+
+1. **Extract Build Files**:
+
+   - Unzip the `extension-build-<version>.zip` file
+   - You'll see the following structure:
+     ```
+     extension-build/
+     ├── manifest.json
+     ├── background.js
+     ├── content.js
+     ├── _locales/
+     └── images/
+     ... // other files
+     ```
+
+2. **Add to Your Extension**:
+
+   - In Xcode, locate your Safari Extension target
+   - Find the `Resources` folder in your extension target
+   - Drag and drop all files from `extension-build/` into the `Resources` folder
+   - When prompted, ensure:
+     - [x] "Copy items if needed" is checked
+     - [x] Your extension target is selected
+     - [x] "Create groups" is selected
+
+3. **Verify Structure**:
+   After adding, your extension's Resources folder should look like this:
+
+   ```
+   YourAppExtension/
+   └── Resources/
+       ├── manifest.json       // From extension-build
+       ├── background.js      // From extension-build
+       ├── content.js         // From extension-build
+       ├── _locales/         // From extension-build
+       └── images/           // From extension-build
+       ... // other files    // From extension-build
+   ```
+
+4. **Build and Run**:
+   - Clean (Cmd + Shift + K) and build (Cmd + B) your project
+   - The extension should now be ready to use
+
+> **Note**: Do not modify the provided build files unless instructed, as they are specifically configured to work with CardliftKit.
+
 ---
+
+## Requirements
+
+- iOS 15.0+
+- Xcode 13.0+
+- Swift 5.0+
+
+---
+
+## License
+
+CardliftKit is available under the MIT license. See the LICENSE file for more info.
