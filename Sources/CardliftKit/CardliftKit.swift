@@ -73,11 +73,10 @@ public enum CardliftKit {
      Upsell View
      Button with sheet to prompt user to install the extension
      */
-    public static func UpSellView(url: URL, config: UpsellButtonConfig) -> some View {
+    public static func InstallPrompt(slug: String, config: UpsellButtonConfig) -> some View {
         return Upsell(
-            appStoreURL: url,
+            slug: slug,
             buttonConfig: UpsellButtonConfig(
-                text: config.text,
                 backgroundColor: config.backgroundColor,
                 foregroundColor: config.foregroundColor
             ))

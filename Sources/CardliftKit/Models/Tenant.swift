@@ -8,14 +8,14 @@
 import Foundation
 
 
-struct Tenant: Codable {
+struct Tenant: Codable, Identifiable {
     let id, slug: String
-    let name, card: String?
-    let buttonColor, buttonBackground: String
-    let autofillBackgroundColor, autofillTextColor: String
+    let name, card: String
+    // let foreground_color, background_color: String
+    // let app_store_url: String
 
     enum CodingKeys: String, CodingKey {
-        case id, slug, name, card, buttonColor, buttonBackground, autofillBackgroundColor, autofillTextColor
+        case id, slug, name, card
     }
 }
 

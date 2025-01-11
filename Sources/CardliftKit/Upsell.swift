@@ -11,8 +11,8 @@ import SwiftUI
 public class TenantViewModel: ObservableObject {
     @Published var tenant: Tenant?
 
-    func fetchTenant() {
-        let url = URL(string: "https://api.cardlift.co/v1/tenants/heb")!
+    func fetchTenant(slug: String = "acme") {
+        let url = URL(string: "https://api.cardlift.co/v1/tenants/\(slug)")!
 
         URLSession.shared.dataTask(with: url) { data, response, error in
             if let error = error {
@@ -43,7 +43,6 @@ public class TenantViewModel: ObservableObject {
  A view that prompts users to install the iOS extension.
  - Parameter appStoreURL: The URL to the App Store page for the iOS extension.
  - Parameter buttonConfig: The configuration for the button.
- - text: The button text.
  - backgroundColor: The button background color.
  - foregroundColor: The button text color.
  - Returns: A button that, when tapped, opens a sheet with an upsell message.
@@ -51,11 +50,11 @@ public class TenantViewModel: ObservableObject {
 public struct Upsell: View {
     @State private var showSheet = false
     @StateObject var tenantViewModel = TenantViewModel()
-    var appStoreURL: URL
+    var slug: String
     var buttonConfig: UpsellButtonConfig
 
-    public init( appStoreURL: URL, buttonConfig: UpsellButtonConfig) {
-        self.appStoreURL = appStoreURL
+    public init( slug: String, buttonConfig: UpsellButtonConfig) {
+        self.slug = slug
         self.buttonConfig = buttonConfig
     }
 
@@ -80,11 +79,11 @@ public struct Upsell: View {
         .background(buttonConfig.backgroundColor)
         .cornerRadius(40)
         .sheet(isPresented: $showSheet) {
-            UpsellSheet(appStoreURL: appStoreURL)
+            UpsellSheet()
                 .environmentObject(tenantViewModel)
         }
         .onAppear {
-            tenantViewModel.fetchTenant()
+            tenantViewModel.fetchTenant(slug: slug)
         }
 
     }
@@ -92,12 +91,6 @@ public struct Upsell: View {
     struct UpsellSheet: View {
         @Environment(\.openURL) var openURL
         @EnvironmentObject var tenantViewModel: TenantViewModel
-
-        var appStoreURL: URL
-
-        init(appStoreURL: URL) {
-            self.appStoreURL = appStoreURL
-        }
 
         var body: some View {
             VStack {
@@ -165,7 +158,7 @@ public struct Upsell: View {
 
                 VStack {
                     Button(action: {
-                        openURL(appStoreURL)
+                        openURL(URL(string:  "")!)
                     }) {
                         Text("Add \(tenantViewModel.tenant?.name ?? "") to your wallet")
                             .font(.system(size: 20, weight: .semibold))
@@ -199,7 +192,7 @@ public struct Upsell: View {
 /**
  A view that displays a shimmering effect using a rounded rectangle.
  The shimmer effect animates the opacity of the rectangle between 0.1 and 0.5.
- 
+
  The `Shimmer` view uses a `State` property `isAnimating` to control the animation.
  When the view appears, it starts an infinite linear animation that toggles the `isAnimating`
  state, creating a shimmering effect.
