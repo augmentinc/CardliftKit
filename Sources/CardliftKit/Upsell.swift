@@ -1,56 +1,108 @@
 import SwiftUI
 
 /**
+ A view model that fetches and holds tenant data.
+`TenantViewModel` is an observable object that fetches tenant data from a remote server and publishes it.
+ - Properties:
+    - tenant: The tenant data fetched from the server. It is an optional `Tenant` object.
+ - Methods:
+    - fetchTenant(): Fetches tenant data from a predefined URL and updates the `tenant` property. Handles network errors and JSON decoding errors.
+*/
+public class TenantViewModel: ObservableObject {
+    @Published var tenant: Tenant?
+
+    func fetchTenant() {
+        let url = URL(string: "https://api.cardlift.co/v1/tenants/heb")!
+
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            if let error = error {
+                print("Network error: \(error.localizedDescription)")
+                return
+            }
+
+            guard let data = data else {
+                print("No data returned from server")
+                return
+            }
+
+            let decoder = JSONDecoder()
+            do {
+                let tenant = try decoder.decode(Tenant.self, from: data)
+                DispatchQueue.main.async {
+                    self.tenant = tenant
+                }
+            } catch {
+                print("Decoding error: \(error.localizedDescription)")
+                print("Failed data: \(String(data: data, encoding: .utf8) ?? "Unreadable data")")
+            }
+        }.resume()
+    }
+}
+
+/**
  A view that prompts users to install the iOS extension.
  - Parameter appStoreURL: The URL to the App Store page for the iOS extension.
  - Parameter buttonConfig: The configuration for the button.
  - text: The button text.
  - backgroundColor: The button background color.
  - foregroundColor: The button text color.
- - cornerRadius: The button corner radius.
  - Returns: A button that, when tapped, opens a sheet with an upsell message.
  */
 public struct Upsell: View {
     @State private var showSheet = false
+    @StateObject var tenantViewModel = TenantViewModel()
     var appStoreURL: URL
     var buttonConfig: UpsellButtonConfig
-    
+
     public init( appStoreURL: URL, buttonConfig: UpsellButtonConfig) {
         self.appStoreURL = appStoreURL
         self.buttonConfig = buttonConfig
     }
-    
+
     public var body: some View {
         Button(action: {
             self.showSheet.toggle()
         }) {
-            Text(buttonConfig.text)
-                .padding()
-                .frame(maxWidth: .infinity)
-                .foregroundColor(buttonConfig.foregroundColor)
+            if tenantViewModel.tenant == nil {
+                ProgressView()
+                    .progressViewStyle(CircularProgressViewStyle(tint: buttonConfig.foregroundColor))
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .foregroundColor(buttonConfig.foregroundColor)
+            } else {
+                Text("Add \(tenantViewModel.tenant?.name ?? "") to Safari")
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .foregroundColor(buttonConfig.foregroundColor)
+            }
         }
         .frame(width: UIScreen.main.bounds.width - 40)
         .background(buttonConfig.backgroundColor)
         .cornerRadius(40)
         .sheet(isPresented: $showSheet) {
             UpsellSheet(appStoreURL: appStoreURL)
+                .environmentObject(tenantViewModel)
         }
-        
+        .onAppear {
+            tenantViewModel.fetchTenant()
+        }
+
     }
-    
+
     struct UpsellSheet: View {
         @Environment(\.openURL) var openURL
-        
+        @EnvironmentObject var tenantViewModel: TenantViewModel
+
         var appStoreURL: URL
-        
+
         init(appStoreURL: URL) {
             self.appStoreURL = appStoreURL
         }
-        
+
         var body: some View {
             VStack {
                 Spacer()
-                
+
                 Text("Simplify your checkout with our Safari Extension")
                     .foregroundColor(Color(red: 55/255, green: 55/255, blue: 55/255))
                     .font(.system(size: 32, weight: .bold))
@@ -59,8 +111,8 @@ public struct Upsell: View {
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: 300, alignment: .center)
                     .padding()
-                
-                AsyncImage(url: URL(string: "https://cardlift.s3.amazonaws.com/brand/heb/heb-card.png")) { image in
+
+                AsyncImage(url: URL(string: tenantViewModel.tenant?.card ?? "")) { image in
                     image
                         .resizable()
                         .aspectRatio(contentMode: .fit)
@@ -71,7 +123,7 @@ public struct Upsell: View {
                         .frame(width: UIScreen.main.bounds.width - 80, height: 190)
                         .padding()
                 }
-                
+
                 Group {
                     HStack {
                         Spacer()
@@ -104,18 +156,18 @@ public struct Upsell: View {
                             .font(.system(size: 16, weight: .medium))
                             .padding(.leading, 6)
                             .foregroundColor(Color(red: 140/255, green: 140/255, blue: 140/255))
-                        
+
                         Spacer()
                     }
                 }
-                
+
                 Spacer()
-                
+
                 VStack {
                     Button(action: {
                         openURL(appStoreURL)
                     }) {
-                        Text("Add to Safari")
+                        Text("Add \(tenantViewModel.tenant?.name ?? "") to your wallet")
                             .font(.system(size: 20, weight: .semibold))
                             .padding()
                             .frame(maxWidth: UIScreen.main.bounds.width - 40)
@@ -123,7 +175,7 @@ public struct Upsell: View {
                             .foregroundColor(.white)
                             .cornerRadius(40)
                     }
-                    
+
                     HStack {
                         Spacer()
                         Image(systemName: "lock.fill")
@@ -135,7 +187,7 @@ public struct Upsell: View {
                         Spacer()
                     }.padding(.top, 4)
                 }
-                
+
             }
             .padding()
         }
@@ -144,9 +196,17 @@ public struct Upsell: View {
 
 
 
+/**
+ A view that displays a shimmering effect using a rounded rectangle.
+ The shimmer effect animates the opacity of the rectangle between 0.1 and 0.5.
+ 
+ The `Shimmer` view uses a `State` property `isAnimating` to control the animation.
+ When the view appears, it starts an infinite linear animation that toggles the `isAnimating`
+ state, creating a shimmering effect.
+*/
 struct Shimmer: View {
     @State private var isAnimating = false
-    
+
     var body: some View {
         RoundedRectangle(cornerRadius: 10)
             .fill(Color(UIColor.lightGray))
