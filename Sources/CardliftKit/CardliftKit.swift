@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 /// The main entry point for the CardliftKit SDK.
 /// All public APIs are exposed here, so consumers only import and interact with `CardliftKit`.
@@ -67,4 +68,19 @@ public enum CardliftKit {
     public static func computeCardMetaData(from formData: CardliftCardFormData) -> CardMetaData? {
         return CardMetaDataParser.computeCardMetaData(from: formData)
     }
+    
+    /**
+     Upsell View
+     Button with sheet to prompt user to install the extension
+     */
+    public static func UpSellView(url: URL, config: UpsellButtonConfig) -> some View {
+        return Upsell(
+            appStoreURL: url,
+            buttonConfig: UpsellButtonConfig(
+                text: config.text,
+                backgroundColor: config.backgroundColor,
+                foregroundColor: config.foregroundColor
+            ))
+    }
+
 }
