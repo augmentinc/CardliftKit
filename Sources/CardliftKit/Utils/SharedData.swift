@@ -6,7 +6,7 @@ import Security
  This enum is used to manage and access shared data across different parts of the application securely using Keychain.
  */
 enum SharedData {
-    private static var serviceIdentifier = "com.augument.chime.sharedData"
+    public static var serviceIdentifier = "demo.cardlift.kit.shared"
 
     /**
      Configures the shared data with the specified service identifier.
