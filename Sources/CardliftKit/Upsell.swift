@@ -85,6 +85,7 @@ public struct Upsell: View {
         .onAppear {
             tenantViewModel.fetchTenant(slug: slug)
         }
+        .disabled(tenantViewModel.tenant == nil)
         
     }
     
