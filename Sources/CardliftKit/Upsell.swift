@@ -53,6 +53,10 @@ public struct Upsell: View {
     var slug: String
     var buttonConfig: UpsellButtonConfig
     
+    var shouldShowSheet: Bool {
+        showSheet && tenantViewModel.tenant != nil
+    }
+    
     public init( slug: String, buttonConfig: UpsellButtonConfig) {
         self.slug = slug
         self.buttonConfig = buttonConfig
@@ -78,7 +82,7 @@ public struct Upsell: View {
         .frame(width: UIScreen.main.bounds.width - 40)
         .background(buttonConfig.backgroundColor)
         .cornerRadius(40)
-        .sheet(isPresented: $showSheet) {
+        .sheet(isPresented: Binding(get: { shouldShowSheet }, set: { showSheet = $0 })) {
             UpsellSheet()
                 .environmentObject(tenantViewModel)
         }
