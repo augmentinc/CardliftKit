@@ -74,9 +74,9 @@ Add CardliftKit to your project using CocoaPods:
 ### 3. Configure App Groups
 
 1. In your Xcode project, go to your app's **Signing & Capabilities** tab
-2. Add a new capability for **App Groups**
-3. Create or select an App Group (e.g., `group.com.mycompany.myapp`)
-4. Ensure the same App Group is added to both the **main app** and **Safari web extension** targets
+2. Add a new capability for **Keychain Sharing**
+3. Create or select an Keychain Groups (e.g., `com.mycompany.myapp.keychain`)
+4. Ensure the same Keychain Group is added to both the **main app** and **Safari web extension** targets
 
 ---
 
@@ -188,7 +188,7 @@ import CardliftKit
 @main
 struct MyApp: App {
     init() {
-        CardliftKit.configure(serviceIdentifier: "group.com.mycompany.myapp")
+        CardliftKit.configure(serviceIdentifier: "com.mycompany.myapp.keychain")
     }
 
     var body: some Scene {
@@ -204,6 +204,11 @@ struct MyApp: App {
 ```swift
 import CardliftKit
 import SafariServices
+
+override init() {
+    super.init()
+    CardliftKit.configure(serviceIdentifier: "com.mycompany.myapp.keychain")
+}
 
 // That’s it!
 // This minimal file is all you need to maintain in your target.
