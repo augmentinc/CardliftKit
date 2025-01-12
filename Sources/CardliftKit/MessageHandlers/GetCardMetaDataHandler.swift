@@ -10,7 +10,7 @@ struct GetCardMetaDataHandler: MessageHandler {
     static let name = "getCardMetaData"
 
     struct MessageData: Codable {}
-
+    
     typealias MessageResponse = CardMetaData
 
     func handle(data: MessageData) throws -> MessageResponse {

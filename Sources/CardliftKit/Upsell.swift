@@ -10,18 +10,31 @@ import SwiftUI
  */
 public class TenantViewModel: ObservableObject {
     @Published var tenant: Tenant?
-    
+    @Published var isLoading: Bool = false
+    @Published var error: Error?
+
     func fetchTenant(slug: String = "acme") {
         let url = URL(string: "https://api.cardlift.co/v1/tenants/\(slug)/ios")!
         
+        isLoading = true
+        error = nil
+        
         URLSession.shared.dataTask(with: url) { data, response, error in
+            DispatchQueue.main.async {
+                self.isLoading = false
+            }
+            
             if let error = error {
-                print("Network error: \(error.localizedDescription)")
+                DispatchQueue.main.async {
+                    self.error = NetworkError.networkError(error)
+                }
                 return
             }
             
             guard let data = data else {
-                print("No data returned from server")
+                DispatchQueue.main.async {
+                    self.error = NetworkError.noData
+                }
                 return
             }
             
@@ -32,8 +45,9 @@ public class TenantViewModel: ObservableObject {
                     self.tenant = tenant
                 }
             } catch {
-                print("Decoding error: \(error.localizedDescription)")
-                print("Failed data: \(String(data: data, encoding: .utf8) ?? "Unreadable data")")
+                DispatchQueue.main.async {
+                    self.error = NetworkError.decodingError(error)
+                }
             }
         }.resume()
     }

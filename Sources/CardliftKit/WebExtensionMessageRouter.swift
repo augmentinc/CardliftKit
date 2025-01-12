@@ -70,6 +70,7 @@ public class WebExtensionMessageRouter {
             sendResponse(response)
         } catch {
             print("Error in handler \(name): \(error)")
+            NSLog("Error in handler \(name): \(error)")
             sendResponse(["type": "error", "data": error.localizedDescription])
         }
     }
