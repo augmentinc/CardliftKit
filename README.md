@@ -81,6 +81,123 @@ Add CardliftKit to your project using CocoaPods:
 3. Create or select an Keychain Groups (e.g., `com.mycompany.myapp.keychain`)
 4. Ensure the same Keychain Group is added to both the **main app** and **Safari web extension** targets
 
+### 4. Configure CardliftKit
+
+1. In you App's entry file, `@main`
+    
+**UIKit**
+```swift
+//AppDelegate.swift
+
+import UIKit
+import CardliftKit
+
+@main
+class AppDelegate: UIResponder, UIApplicationDelegate {
+
+    var window: UIWindow?
+
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        CardliftKit.configure(serviceIdentifier: "com.augument.chime.keychain")
+        ....
+    }
+
+}
+```
+
+**SwiftUI**
+```swift
+import SwiftUI
+import CardliftKit
+
+@main
+struct CardLiftApp: App {
+    
+    init () {
+        CardliftKit.configure(serviceIdentifier: "keychain.co.cardlift.demo.CardLift")
+    }
+        
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
+    }
+}
+```
+
+### 5. Enable Extension Prompt
+
+CardliftKit comes with beautiful enable extension prompt / overlay
+
+```swift
+import SwiftUI
+import CardliftKit
+
+struct ContentView: View {
+    @State var showInstallPrompt: Bool = false
+    
+    var body: some View {
+        VStack {
+            Text("Hello, world!")
+        }
+        .padding()
+        .overlay {
+            CardliftKit.InstallPrompt(slug: "your-slug")($showInstallPrompt)
+        }
+    }
+}
+```
+
+---
+
+### 6. Safari Extension Build Files
+
+`extension-build-<version>.zip` file containing the necessary Safari extension files. Follow these steps to add them to your project:
+
+1. **Extract Build Files**:
+
+   - Unzip the `extension-build-<version>.zip` file
+   - You'll see the following structure:
+     ```
+     extension-build/
+     ├── manifest.json
+     ├── background.js
+     ├── content.js
+     ├── _locales/
+     └── images/
+     ... // other files
+     ```
+
+2. **Add to Your Extension**:
+
+   - In Xcode, locate your Safari Extension target
+   - Find the `Resources` folder in your extension target
+   - Drag and drop all files from `extension-build/` into the `Resources` folder
+   - When prompted, ensure:
+     - [x] "Copy items if needed" is checked
+     - [x] Your extension target is selected
+     - [x] "Create groups" is selected
+
+3. **Verify Structure**:
+   After adding, your extension's Resources folder should look like this:
+
+   ```
+   YourAppExtension/
+   └── Resources/
+       ├── manifest.json       // From extension-build
+       ├── background.js      // From extension-build
+       ├── content.js         // From extension-build
+       ├── _locales/         // From extension-build
+       └── images/           // From extension-build
+       ... // other files    // From extension-build
+   ```
+
+4. **Build and Run**:
+   - Clean (Cmd + Shift + K) and build (Cmd + B) your project
+   - The extension should now be ready to use
+
+> **Note**: Do not modify the provided build files unless instructed, as they are specifically configured to work with CardliftKit.
+
 ---
 
 ## Security & Data Storage
@@ -204,14 +321,14 @@ struct MyApp: App {
 import CardliftKit
 import SafariServices
 
-override init() {
-    super.init()
-    CardliftKit.configure(serviceIdentifier: "com.mycompany.myapp.keychain")
-}
-
 // That’s it!
 // This minimal file is all you need to maintain in your target.
-final class SafariWebExtensionHandler: CardliftWebExtensionHandler {}
+final class SafariWebExtensionHandler: CardliftWebExtensionHandler {
+    override init() {
+        super.init()
+        CardliftKit.configure(serviceIdentifier: "com.mycompany.myapp.keychain")
+    }
+}
 // The extension Info.plist typically references "$(PRODUCT_MODULE_NAME).SafariWebExtensionHandler"
 // as the NSExtensionPrincipalClass, so this extension will be recognized.
 ```
@@ -233,54 +350,6 @@ if errors.isEmpty {
     }
 }
 ```
-
-### Safari Extension Build Files
-
-`extension-build-<version>.zip` file containing the necessary Safari extension files. Follow these steps to add them to your project:
-
-1. **Extract Build Files**:
-
-   - Unzip the `extension-build-<version>.zip` file
-   - You'll see the following structure:
-     ```
-     extension-build/
-     ├── manifest.json
-     ├── background.js
-     ├── content.js
-     ├── _locales/
-     └── images/
-     ... // other files
-     ```
-
-2. **Add to Your Extension**:
-
-   - In Xcode, locate your Safari Extension target
-   - Find the `Resources` folder in your extension target
-   - Drag and drop all files from `extension-build/` into the `Resources` folder
-   - When prompted, ensure:
-     - [x] "Copy items if needed" is checked
-     - [x] Your extension target is selected
-     - [x] "Create groups" is selected
-
-3. **Verify Structure**:
-   After adding, your extension's Resources folder should look like this:
-
-   ```
-   YourAppExtension/
-   └── Resources/
-       ├── manifest.json       // From extension-build
-       ├── background.js      // From extension-build
-       ├── content.js         // From extension-build
-       ├── _locales/         // From extension-build
-       └── images/           // From extension-build
-       ... // other files    // From extension-build
-   ```
-
-4. **Build and Run**:
-   - Clean (Cmd + Shift + K) and build (Cmd + B) your project
-   - The extension should now be ready to use
-
-> **Note**: Do not modify the provided build files unless instructed, as they are specifically configured to work with CardliftKit.
 
 ### **Promt User to Enable the Extension**
 
