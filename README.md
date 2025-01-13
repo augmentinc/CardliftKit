@@ -176,6 +176,12 @@ let errors = CardliftKit.validateAllFields(formData)
 CardliftKit.validateField("fieldName", in: formData, errors: &errors)
 ```
 
+### 5. Upsell / Enable Prompt
+
+```swift
+CardliftKit.InstallPrompt(slug: String, config: UpsellButtonConfig)
+```
+
 ---
 
 ## Example Usage
@@ -282,6 +288,20 @@ if errors.isEmpty {
    - The extension should now be ready to use
 
 > **Note**: Do not modify the provided build files unless instructed, as they are specifically configured to work with CardliftKit.
+
+### **Promt User to Enable the Extension**
+
+You can prompt user to enable the safari extension
+
+```swift
+CardliftKit.InstallPrompt(
+    slug: "heb",
+    config: UpsellButtonConfig(
+        backgroundColor: Color.black,
+        foregroundColor: Color.white
+    )
+)
+```
 
 ---
 
