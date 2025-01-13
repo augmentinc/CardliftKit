@@ -21,6 +21,9 @@ The **CardliftKit SDK** is a comprehensive framework designed to simplify form d
 4. [Card Data Models](#card-data-models)
 5. [Validation and Parsing](#validation-and-parsing)
 6. [Example Usage](#example-usage)
+7. [Troubleshooting](#troubleshooting)
+8. [Requirements](#requirements)
+9. [License](#license)
 
 ---
 
@@ -71,7 +74,7 @@ Add CardliftKit to your project using CocoaPods:
 
 5. Open the `.xcworkspace` file that CocoaPods created (not the `.xcodeproj`).
 
-### 3. Configure App Groups
+### 3. Configure Keychain Sharing
 
 1. In your Xcode project, go to your app's **Signing & Capabilities** tab
 2. Add a new capability for **Keychain Sharing**
@@ -86,18 +89,8 @@ CardliftKit uses iOS Keychain for secure storage:
 
 - **Encrypted Storage**: All sensitive card data is encrypted in the Keychain
 - **Access Control**: Only authorized app components can access the data
-- **App Group Scoping**: Keychain items are scoped to your app group
+- **Keychain Sharing**: Keychain items are scoped to your app group
 - **Automatic Data Protection**: Leverages iOS's built-in Keychain security
-
-### Configuration
-
-Initialize the SDK with your App Group identifier:
-
-```swift
-import CardliftKit
-
-CardliftKit.configure(serviceIdentifier: "group.com.mycompany.myapp")
-```
 
 ---
 
@@ -302,6 +295,25 @@ CardliftKit.InstallPrompt(
     )
 )
 ```
+
+---
+
+## Troubleshooting
+
+### Build Error with Script Sandboxing
+
+If you encounter this error:
+
+```
+Sandbox: rsync.samba(xxxxx) deny(1) file-write-create /Users/.../DerivedData/.../Build/Products/Debug-iphonesimulator/[AppName].app/Frameworks/CardliftKit.framework/...
+```
+
+**Solution:**
+
+1. In Xcode, select your project in the navigator
+2. Go to **Build Settings**
+3. Search for "User Script Sandboxing"
+4. Set its value to **No**
 
 ---
 
