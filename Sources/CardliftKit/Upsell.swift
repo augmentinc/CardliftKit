@@ -73,7 +73,7 @@ public struct Upsell: View {
                     .frame(maxWidth: .infinity)
                     .foregroundColor(buttonConfig.foregroundColor)
             } else {
-                Text("Add \(tenantViewModel.tenant?.name ?? "") to Safari")
+                Text(tenantViewModel.tenant!.upsellLabel)
                     .padding()
                     .frame(maxWidth: .infinity)
                     .foregroundColor(buttonConfig.foregroundColor)
@@ -146,7 +146,7 @@ public struct Upsell: View {
                     }) {
                         let bGColor = tenantViewModel.tenant!.backgroundColor
                         
-                        Text("Add \(tenantViewModel.tenant!.name) to your wallet")
+                        Text(tenantViewModel.tenant!.upsellLabel)
                             .font(.system(size: 20, weight: .semibold))
                             .padding()
                             .frame(maxWidth: UIScreen.main.bounds.width - 40)
