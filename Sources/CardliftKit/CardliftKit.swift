@@ -84,15 +84,12 @@ public enum CardliftKit {
     
     /**
      Upsell View
-     Button with sheet to prompt user to install the extension
+     Overlay sheet to prompt user to install the extension
      */
-    public static func InstallPrompt(slug: String, config: UpsellButtonConfig) -> some View {
-        return Upsell(
-            slug: slug,
-            buttonConfig: UpsellButtonConfig(
-                backgroundColor: config.backgroundColor,
-                foregroundColor: config.foregroundColor
-            ))
+    public static func InstallPrompt(slug: String) -> (Binding<Bool>) -> Upsell {
+        return { isPresented in
+            Upsell(slug: slug, isPresented: isPresented)
+        }
     }
-
+    
 }

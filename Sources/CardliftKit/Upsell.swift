@@ -48,128 +48,111 @@ public class TenantViewModel: ObservableObject {
  - Returns: A button that, when tapped, opens a sheet with an upsell message.
  */
 public struct Upsell: View {
-    @State private var showSheet = false
-    @StateObject var tenantViewModel = TenantViewModel()
     var slug: String
-    var buttonConfig: UpsellButtonConfig
-    
-    var shouldShowSheet: Bool {
-        showSheet && tenantViewModel.tenant != nil
-    }
-    
-    public init( slug: String, buttonConfig: UpsellButtonConfig) {
+    @Binding var isPresented: Bool
+    @StateObject var tenantViewModel = TenantViewModel()
+   
+    public init(slug: String, isPresented: Binding<Bool>) {
         self.slug = slug
-        self.buttonConfig = buttonConfig
+        self._isPresented = isPresented
     }
     
     public var body: some View {
-        Button(action: {
-            self.showSheet.toggle()
-        }) {
-            if tenantViewModel.tenant == nil {
-                ProgressView()
-                    .progressViewStyle(CircularProgressViewStyle(tint: buttonConfig.foregroundColor))
-                    .padding()
-                    .frame(maxWidth: .infinity)
-                    .foregroundColor(buttonConfig.foregroundColor)
-            } else {
-                Text(tenantViewModel.tenant!.upsellLabel)
-                    .padding()
-                    .frame(maxWidth: .infinity)
-                    .foregroundColor(buttonConfig.foregroundColor)
+        EmptyView()
+            .sheet(isPresented: $isPresented) {
+                if let tenant = tenantViewModel.tenant {
+                    UpsellSheet(tenant: tenant)
+                } else {
+                    EmptyView()
+                }
             }
-        }
-        .frame(width: UIScreen.main.bounds.width - 40)
-        .background(buttonConfig.backgroundColor)
-        .cornerRadius(40)
-        .sheet(isPresented: Binding(get: { shouldShowSheet }, set: { showSheet = $0 })) {
-            UpsellSheet()
-                .environmentObject(tenantViewModel)
-        }
-        .onAppear {
-            tenantViewModel.fetchTenant(slug: slug)
-        }
-        .disabled(tenantViewModel.tenant == nil)
+            .onAppear {
+                tenantViewModel.fetchTenant(slug: slug)
+            }
         
     }
+}
+
+struct UpsellSheet: View {
+    @Environment(\.openURL) var openURL
+    var tenant: Tenant
     
-    struct UpsellSheet: View {
-        @Environment(\.openURL) var openURL
-        @EnvironmentObject var tenantViewModel: TenantViewModel
-        
-        var body: some View {
-            VStack {
-                Spacer()
-                
-                Text(tenantViewModel.tenant!.title)
-                    .foregroundColor(Color(red: 55/255, green: 55/255, blue: 55/255))
-                    .font(.system(size: 32, weight: .bold))
-                    .tracking(0.3)
-                    .lineSpacing(0.8)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: 300, alignment: .center)
+    init (tenant: Tenant) {
+        self.tenant = tenant
+    }
+    
+    var body: some View {
+        VStack {
+            Spacer()
+            
+            Text(tenant.title)
+                .foregroundColor(Color(red: 55/255, green: 55/255, blue: 55/255))
+                .font(.system(size: 32, weight: .bold))
+                .tracking(0.3)
+                .lineSpacing(0.8)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 300, alignment: .center)
+                .padding()
+            
+            AsyncImage(url: URL(string: tenant.cardImage)) { image in
+                image
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: UIScreen.main.bounds.width - 80)
                     .padding()
-                
-                AsyncImage(url: URL(string: tenantViewModel.tenant?.cardImage ?? "")) { image in
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: UIScreen.main.bounds.width - 80)
-                        .padding()
-                } placeholder: {
-                    Shimmer()
-                        .frame(width: UIScreen.main.bounds.width - 80, height: 190)
-                        .padding()
-                }
-                
-                Group {
-                    ForEach(tenantViewModel.tenant!.features, id: \.self) { feature in
-                        HStack {
-                            Spacer()
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundColor(Color(red: 110/255, green: 100/255, blue: 100/255))
-                                .frame(width: 4, height: 4)
-                            Text(feature)
-                                .font(.system(size: 16, weight: .medium))
-                                .padding(.leading, 6)
-                                .foregroundColor(Color(red: 140/255, green: 140/255, blue: 140/255))
-                            Spacer()
-                        }
-                    }
-                }
-                
-                Spacer()
-                
-                VStack {
-                    Button(action: {
-                        openURL(URL(string: tenantViewModel.tenant!.appStoreLink)!)
-                    }) {
-                        let bGColor = tenantViewModel.tenant!.backgroundColor
-                        
-                        Text(tenantViewModel.tenant!.upsellLabel)
-                            .font(.system(size: 20, weight: .semibold))
-                            .padding()
-                            .frame(maxWidth: UIScreen.main.bounds.width - 40)
-                            .background(Color(red: Double(bGColor.r/255), green: bGColor.g/255, blue: bGColor.b/255))
-                            .foregroundColor(.white)
-                            .cornerRadius(tenantViewModel.tenant!.buttonRadius)
-                    }
-                    
+            } placeholder: {
+                Shimmer()
+                    .frame(width: UIScreen.main.bounds.width - 80, height: 190)
+                    .padding()
+            }
+            
+            Group {
+                ForEach(tenant.features, id: \.self) { feature in
                     HStack {
                         Spacer()
-                        Image(systemName: "lock.fill")
-                            .foregroundColor(.gray)
-                        Text("End to end encrypted on your device")
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundColor(.gray)
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(Color(red: 110/255, green: 100/255, blue: 100/255))
+                            .frame(width: 4, height: 4)
+                        Text(feature)
+                            .font(.system(size: 16, weight: .medium))
+                            .padding(.leading, 6)
+                            .foregroundColor(Color(red: 140/255, green: 140/255, blue: 140/255))
                         Spacer()
-                    }.padding(.top, 4)
+                    }
+                }
+            }
+            
+            Spacer()
+            
+            VStack {
+                Button(action: {
+                    openURL(URL(string: tenant.appStoreLink)!)
+                }) {
+                    let bGColor = tenant.backgroundColor
+                    
+                    Text(tenant.upsellLabel)
+                        .font(.system(size: 20, weight: .semibold))
+                        .padding()
+                        .frame(maxWidth: UIScreen.main.bounds.width - 40)
+                        .background(Color(red: Double(bGColor.r/255), green: bGColor.g/255, blue: bGColor.b/255))
+                        .foregroundColor(.white)
+                        .cornerRadius(tenant.buttonRadius)
                 }
                 
+                HStack {
+                    Spacer()
+                    Image(systemName: "lock.fill")
+                        .foregroundColor(.gray)
+                    Text("End to end encrypted on your device")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(.gray)
+                    Spacer()
+                }.padding(.top, 4)
             }
-            .padding()
+            
         }
+        .padding()
     }
 }
 
