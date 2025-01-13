@@ -70,17 +70,18 @@ enum CardMetaDataParser {
             let year = Int(components[1])
         else { return nil }
 
+        let paddedMonth = String(format: "%02d", month)
         let monthName = getMonthName(for: month)
         return ExpiryDetails(
             cardExpirationDate: expiry,
-            cardExpirationDateFull: "\(month)/20\(year)",
-            cardExpirationDateFullNoSlash: "\(month)20\(year)",
-            cardExpirationDateNoSlash: "\(month)\(year)",
+            cardExpirationDateFull: "\(paddedMonth)/20\(year)",
+            cardExpirationDateFullNoSlash: "\(paddedMonth)20\(year)",
+            cardExpirationDateNoSlash: "\(paddedMonth)\(year)",
             cardExpirationYear: "20\(year)",
             cardExpirationYearShort: "\(year)",
             cardExpirationMonthFull: monthName,
             cardExpirationMonthShort: String(monthName.prefix(3)),
-            cardExpirationMonth: "\(month)"
+            cardExpirationMonth: paddedMonth
         )
     }
 
