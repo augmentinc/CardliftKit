@@ -23,6 +23,7 @@ enum SharedData {
      */
     enum Keys: String {
         case cardMetaDataKey
+        case accountInfoKey
         var key: String { rawValue }
     }
 
@@ -41,6 +42,23 @@ enum SharedData {
             if let newValue = newValue,
                let data = try? JSONEncoder().encode(newValue) {
                 setKeychainData(data, for: Keys.cardMetaDataKey.key)
+            } else {
+                removeKeychainData(for: Keys.cardMetaDataKey.key)
+            }
+        }
+    }
+    
+    static var accountInfo: AccountInfo? {
+        get {
+            guard let data = getKeychainData(for: "accountInfo") else {
+                return nil
+            }
+            return try? JSONDecoder().decode(AccountInfo.self, from: data)
+        }
+        set {
+            if let newValue = newValue,
+               let data = try? JSONEncoder().encode(newValue) {
+                setKeychainData(data, for: Keys.accountInfoKey.key)
             } else {
                 removeKeychainData(for: Keys.cardMetaDataKey.key)
             }

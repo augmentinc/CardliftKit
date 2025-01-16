@@ -19,6 +19,7 @@ public enum CardliftKit {
      */
     public static func setup(router: WebExtensionMessageRouter) {
         router.registerHandler(GetCardMetaDataHandler())
+        router.registerHandler(OnInstallMessageHandler())
         // Other handlers here...
     }
     
@@ -43,6 +44,20 @@ public enum CardliftKit {
         SharedData.clear()
     }
     
+    /**
+     Get account info
+     */
+    public static func getAccountInfo() -> AccountInfo? {
+        return SharedData.accountInfo
+    }
+
+    /**
+     Save account info
+    */
+    public static func saveAccountInfo(account: AccountInfo){
+        SharedData.accountInfo = account
+    }
+
     /**
      Validates all fields in the provided `CardliftCardFormData` and returns a dictionary of errors.
      - Parameter formData: The form data to validate.
