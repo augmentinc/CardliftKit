@@ -67,6 +67,20 @@ public struct Upsell: View {
     @StateObject var tenantViewModel = TenantViewModel()
     @StateObject var accountViewModel = AccountInfoViewModel()
     
+    private var isPresentedBinding: Binding<Bool> {
+        Binding(
+            get: {
+                NSLog("Debug: Upsell isPresented: \(isPresented)");
+                NSLog("Debug: Upsell Tenant: \(String(describing: tenantViewModel.tenant))");
+                NSLog("Debug: Upsell Account: \(String(describing: accountViewModel.account))");
+                return tenantViewModel.tenant != nil && accountViewModel.account == nil
+            },
+            set: { newValue in
+                isPresented = newValue
+            }
+        )
+    }
+    
     public init(slug: String, isPresented: Binding<Bool>) {
         self.slug = slug
         self._isPresented = isPresented
@@ -74,12 +88,8 @@ public struct Upsell: View {
     
     public var body: some View {
         EmptyView()
-            .sheet(isPresented: $isPresented) {
-                if let tenant = tenantViewModel.tenant, accountViewModel.account == nil {
-                    UpsellSheet(tenant: tenant)
-                } else {
-                    EmptyView()
-                }
+            .sheet(isPresented: isPresentedBinding) {
+                UpsellSheet(tenant: tenantViewModel.tenant!)
             }
             .onAppear {
                 tenantViewModel.fetchTenant(slug: slug)
