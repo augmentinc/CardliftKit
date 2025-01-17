@@ -40,6 +40,20 @@ public class TenantViewModel: ObservableObject {
 }
 
 /**
+ Data view model for fetching user info from keychain
+ */
+public class AccountInfoViewModel: ObservableObject {
+    @Published var account: AccountInfo?
+
+    public func getAccount() {
+        if let data = SharedData.accountInfo {
+            account = data
+            return
+        }
+    }
+}
+
+/**
  A view that prompts users to install the iOS extension.
  - Parameter appStoreURL: The URL to the App Store page for the iOS extension.
  - Parameter buttonConfig: The configuration for the button.
@@ -51,7 +65,22 @@ public struct Upsell: View {
     var slug: String
     @Binding var isPresented: Bool
     @StateObject var tenantViewModel = TenantViewModel()
-   
+    @StateObject var accountViewModel = AccountInfoViewModel()
+    
+    private var isPresentedBinding: Binding<Bool> {
+        Binding(
+            get: {
+                NSLog("Debug: Upsell isPresented: \(isPresented)");
+                NSLog("Debug: Upsell Tenant: \(String(describing: tenantViewModel.tenant))");
+                NSLog("Debug: Upsell Account: \(String(describing: accountViewModel.account))");
+                return tenantViewModel.tenant != nil && accountViewModel.account == nil
+            },
+            set: { newValue in
+                isPresented = newValue
+            }
+        )
+    }
+    
     public init(slug: String, isPresented: Binding<Bool>) {
         self.slug = slug
         self._isPresented = isPresented
@@ -59,15 +88,12 @@ public struct Upsell: View {
     
     public var body: some View {
         EmptyView()
-            .sheet(isPresented: $isPresented) {
-                if let tenant = tenantViewModel.tenant {
-                    UpsellSheet(tenant: tenant)
-                } else {
-                    EmptyView()
-                }
+            .sheet(isPresented: isPresentedBinding) {
+                UpsellSheet(tenant: tenantViewModel.tenant!)
             }
             .onAppear {
                 tenantViewModel.fetchTenant(slug: slug)
+                accountViewModel.getAccount()
             }
         
     }
