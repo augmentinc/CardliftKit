@@ -7,21 +7,29 @@
 
 import Foundation
 
+struct AccountTokenResponse: Codable {
+    var success: Bool
+}
+
 /*
- A handler responsible for processing messages related to saving and retriving account info / token
+ A handler responsible for processing messages related to saving and retrieving account info / token
  Conforms to the `MessageHandler` protocol.
  */
 struct OnInstallMessageHandler: MessageHandler {
-    static let name = "account-on-install"
+    static let name = "sendAccountToken"
+    
+    typealias MessageResponse = AccountTokenResponse
     
     struct MessageData: Codable {
-        public let token : String
+        var token: String
     }
     
-    typealias MessageResponse = Bool
-    
     func handle(data: MessageData) throws -> MessageResponse {
+        guard !data.token.isEmpty else {
+            throw NSError(domain: "OnInstallMessageHandler", code: 400, userInfo: [NSLocalizedDescriptionKey: "Token cannot be empty"])
+        }
+        
         SharedData.accountInfo = AccountInfo(token: data.token)
-        return true
+        return AccountTokenResponse(success: true)
     }
 }

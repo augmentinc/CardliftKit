@@ -50,7 +50,7 @@ enum SharedData {
     
     static var accountInfo: AccountInfo? {
         get {
-            guard let data = getKeychainData(for: "accountInfo") else {
+            guard let data = getKeychainData(for: Keys.accountInfoKey.key) else {
                 return nil
             }
             return try? JSONDecoder().decode(AccountInfo.self, from: data)

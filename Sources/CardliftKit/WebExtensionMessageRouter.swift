@@ -43,11 +43,9 @@ extension Decodable {
     }
 }
 
-// Message Router
 public class WebExtensionMessageRouter {
     private var handlers: [String: (Any) throws -> Any] = [:]
 
-    // Register a handler
     public func registerHandler<H: MessageHandler>(_ handler: H) {
         handlers[H.name] = { rawData in
             guard let dictionary = rawData as? [String: Any],
@@ -59,7 +57,6 @@ public class WebExtensionMessageRouter {
         }
     }
 
-    // Process a message
     public func handleMessage(name: String, data: Any, sendResponse: @escaping (Any) -> Void) {
         guard let handler = handlers[name] else {
             return sendResponse(["type": "error", "data": "name: \(name) not found"])
@@ -69,7 +66,6 @@ public class WebExtensionMessageRouter {
             let response = try handler(data)
             sendResponse(response)
         } catch {
-            print("Error in handler \(name): \(error)")
             sendResponse(["type": "error", "data": error.localizedDescription])
         }
     }
