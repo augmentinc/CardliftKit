@@ -237,13 +237,23 @@ class VideoPlayerManager: ObservableObject {
     static let shared = VideoPlayerManager()
     var pip: AVPictureInPictureController?
     var player: AVPlayer?
+    var timeObserver: Any?
+    var loopObserver: Any?
     
     private init() {}
-
+    
     func cleanUp() {
+        if let timeObserver = timeObserver {
+            player?.removeTimeObserver(timeObserver)
+        }
+        if let loopObserver = loopObserver {
+            NotificationCenter.default.removeObserver(loopObserver)
+        }
         player?.pause()
-        pip = nil
         player = nil
+        pip = nil
+        timeObserver = nil
+        loopObserver = nil
     }
 }
 
@@ -253,48 +263,77 @@ class VideoPlayerManager: ObservableObject {
  */
 private struct VideoStep: View {
     @State private var playerView = UIView()
+    @State private var isVideoLoading = true
     
     var body: some View {
         GeometryReader { geometry in
-            UIViewWrapper(view: playerView)
-                .frame(width: geometry.size.width, height: geometry.size.height)
-                .padding(20)
-                .onAppear {
-                    let videoURL = URL(string: "https://cardlift.s3.us-east-1.amazonaws.com/brand/cardvault/enable-extension.mp4")!
-                    
-                    // Set audio session category
-                    do {
-                        try AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
-                    } catch {
-                        debugPrint("Error in setting audio session category. Error -\(error.localizedDescription)")
-                    }
-                    
-                    VideoPlayerManager.shared.player = AVPlayer(url: videoURL)
-                    let playerLayer = AVPlayerLayer(player: VideoPlayerManager.shared.player)
-                    
-                    // Set the frame to match the view's bounds
-                    playerLayer.frame = CGRect(x: 0, y: 0, width: geometry.size.width - 40, height: geometry.size.height)
-                    playerLayer.videoGravity = .resizeAspectFill
-                    playerLayer.cornerRadius = 8
-                    playerLayer.masksToBounds = true
-                    playerView.layer.addSublayer(playerLayer)
-                    
-                    // Add observer for video end to enable looping
-                    NotificationCenter.default.addObserver(
-                        forName: .AVPlayerItemDidPlayToEndTime,
-                        object: VideoPlayerManager.shared.player?.currentItem,
-                        queue: .main
-                    ) { _ in
-                        VideoPlayerManager.shared.player?.seek(to: .zero)
-                        VideoPlayerManager.shared.player?.play()
-                    }
-                    
-                    VideoPlayerManager.shared.pip = AVPictureInPictureController(playerLayer: playerLayer)
-                    VideoPlayerManager.shared.player?.play()
+            let contentWidth = geometry.size.width - 40
+            let contentHeight = geometry.size.height
+            
+            ZStack {
+                if isVideoLoading {
+                    Shimmer()
+                        .frame(width: contentWidth, height: contentHeight)
+                        .cornerRadius(8)
                 }
-                .onDisappear {
-                    VideoPlayerManager.shared.cleanUp()
-                }
+                
+                UIViewWrapper(view: playerView)
+                    .frame(width: contentWidth, height: contentHeight)
+                    .opacity(isVideoLoading ? 0 : 1)
+                    .onAppear {
+                        let videoURL = URL(string: "https://cardlift.s3.us-east-1.amazonaws.com/brand/cardvault/enable-extension.mp4")!
+                        
+                        // Set audio session category
+                        do {
+                            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
+                        } catch {
+                            debugPrint("Error in setting audio session category. Error -\(error.localizedDescription)")
+                        }
+                        
+                        let player = AVPlayer(url: videoURL)
+                        VideoPlayerManager.shared.player = player
+                        let playerLayer = AVPlayerLayer(player: player)
+                        
+                        // Set the frame to match the view's bounds
+                        playerLayer.frame = CGRect(x: 0, y: 0, width: contentWidth, height: contentHeight)
+                        playerLayer.videoGravity = .resizeAspectFill
+                        playerLayer.cornerRadius = 8
+                        playerLayer.masksToBounds = true
+                        playerView.layer.addSublayer(playerLayer)
+                        
+                        // Handle video ready to play
+                        let loopObserver = NotificationCenter.default.addObserver(
+                            forName: .AVPlayerItemDidPlayToEndTime,
+                            object: player.currentItem,
+                            queue: .main) { _ in
+                                player.seek(to: .zero)
+                                player.play()
+                        }
+                        
+                        // Add periodic time observer to check loading status
+                        let timeObserver = player.addPeriodicTimeObserver(
+                            forInterval: CMTime(seconds: 0.1, preferredTimescale: 600),
+                            queue: .main) { _ in
+                                if player.currentItem?.status == .readyToPlay && player.timeControlStatus == .playing {
+                                    withAnimation(.easeOut(duration: 0.3)) {
+                                        isVideoLoading = false
+                                    }
+                                }
+                        }
+                        
+                        // Store observers for cleanup
+                        VideoPlayerManager.shared.timeObserver = timeObserver
+                        VideoPlayerManager.shared.loopObserver = loopObserver
+                        
+                        VideoPlayerManager.shared.pip = AVPictureInPictureController(playerLayer: playerLayer)
+                        player.play()
+                    }
+                    .onDisappear {
+                        VideoPlayerManager.shared.cleanUp()
+                    }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(20)
         }
         .ignoresSafeArea()
     }
