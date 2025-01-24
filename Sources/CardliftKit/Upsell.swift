@@ -438,6 +438,12 @@ private struct BottomButton: View {
                 let encodedName = tenant.name.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? tenant.name
                 if let settingsUrl = URL(string: "App-Prefs:SAFARI&path=WEB_EXTENSIONS/\(encodedName)") {
                     openURL(settingsUrl)
+
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+                        withAnimation {
+                            currentStep += 1
+                        }
+                    }
                 }
             } else {
                 currentStep += 1
