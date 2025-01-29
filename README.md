@@ -76,16 +76,27 @@ Add CardliftKit to your project using CocoaPods:
 
 ### 3. Configure Keychain Sharing
 
-1. In your Xcode project, go to your app's **Signing & Capabilities** tab
-2. Add a new capability for **Keychain Sharing**
-3. Create or select an Keychain Groups (e.g., `com.mycompany.myapp.keychain`)
-4. Ensure the same Keychain Group is added to both the **main app** and **Safari web extension** targets
+1. In your Xcode project, select your app target
+2. Go to the **Signing & Capabilities** tab
+3. Add a new capability for **Keychain Sharing**
+4. Create or select an Keychain Groups (e.g., `com.mycompany.myapp.keychain`)
+5. Ensure the same Keychain Group is added to both the **main app** and **Safari web extension** targets
 
-### 4. Configure CardliftKit
+### 4. Enable Background Modes for PiP
+
+1. In your Xcode project, select your app target
+2. Go to the **Signing & Capabilities** tab
+3. Add a new capability for **Background Modes**
+4. Check the option for **Audio, AirPlay, and Picture in Picture**
+
+This enables Picture-in-Picture (PiP) support for video playback in your app.
+
+### 5. Configure CardliftKit
 
 1. In you App's entry file, `@main`
-    
+
 **UIKit**
+
 ```swift
 //AppDelegate.swift
 
@@ -106,17 +117,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 ```
 
 **SwiftUI**
+
 ```swift
 import SwiftUI
 import CardliftKit
 
 @main
 struct CardLiftApp: App {
-    
+
     init () {
         CardliftKit.configure(serviceIdentifier: "keychain.co.cardlift.demo.CardLift")
     }
-        
+
     var body: some Scene {
         WindowGroup {
             ContentView()
@@ -125,7 +137,7 @@ struct CardLiftApp: App {
 }
 ```
 
-### 5. Enable Extension Prompt
+### 6. Enable Extension Prompt
 
 CardliftKit comes with beautiful enable extension prompt / overlay
 
@@ -135,7 +147,7 @@ import CardliftKit
 
 struct ContentView: View {
     @State var showInstallPrompt: Bool = false
-    
+
     var body: some View {
         VStack {
             Text("Hello, world!")
@@ -148,9 +160,7 @@ struct ContentView: View {
 }
 ```
 
----
-
-### 6. Safari Extension Build Files
+### 7. Safari Extension Build Files
 
 `extension-build-<version>.zip` file containing the necessary Safari extension files. Follow these steps to add them to your project:
 
