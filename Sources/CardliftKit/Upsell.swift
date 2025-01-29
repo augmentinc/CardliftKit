@@ -328,9 +328,6 @@ private struct VideoStep: View {
                         VideoPlayerManager.shared.pip = AVPictureInPictureController(playerLayer: playerLayer)
                         player.play()
                     }
-                    .onDisappear {
-                        VideoPlayerManager.shared.cleanUp()
-                    }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(20)
@@ -435,8 +432,7 @@ private struct BottomButton: View {
         if currentStep < 3 {
             if currentStep == 2 {
                 VideoPlayerManager.shared.pip?.startPictureInPicture()
-                let encodedName = tenant.name.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? tenant.name
-                if let settingsUrl = URL(string: "App-Prefs:SAFARI&path=WEB_EXTENSIONS/\(encodedName)") {
+                if let settingsUrl = URL(string: "App-Prefs:root=SAFARI&path=EXTENSIONS") {
                     openURL(settingsUrl)
 
                     DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
@@ -449,6 +445,7 @@ private struct BottomButton: View {
                 currentStep += 1
             }
         } else {
+            VideoPlayerManager.shared.cleanUp()
             openURL(URL(string: tenant.appStoreLink)!)
         }
     }
