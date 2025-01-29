@@ -11,9 +11,11 @@ import AVFoundation
  - tenant: The tenant data fetched from the server. It is an optional `Tenant` object.
  - Methods:
  - fetchTenant(): Fetches tenant data from a predefined URL and updates the `tenant` property. Handles network errors and JSON decoding errors.
+ - getPreloadedVideoAsset(url: String): Fetches a video asset from a predefined URL and updates the `videoAsset` property.  
  */
 public class TenantViewModel: ObservableObject {
     @Published var tenant: Tenant?
+    @Published private(set) var videoAsset: AVURLAsset?
     
     func fetchTenant(slug: String = "acme") {
         let url = URL(string: "https://api.cardlift.co/v1/tenants/\(slug)/ios")!
@@ -40,6 +42,21 @@ public class TenantViewModel: ObservableObject {
                 print("Failed data: \(String(data: data, encoding: .utf8) ?? "Unreadable data")")
             }
         }.resume()
+    }
+    
+    func getPreloadedVideoAsset(url: String) {
+        let videoURL = URL(string: url)!
+        let asset = AVURLAsset(url: videoURL, options: [
+            AVURLAssetPreferPreciseDurationAndTimingKey: true
+        ])
+        
+        // Start preloading video
+        let keys = ["playable", "duration"]
+        asset.loadValuesAsynchronously(forKeys: keys) { [weak self] in
+            DispatchQueue.main.async {
+                self?.videoAsset = asset
+            }
+        }
     }
 }
 
@@ -79,10 +96,11 @@ public struct Upsell: View {
     public var body: some View {
         EmptyView()
             .sheet(isPresented: isPresentedBinding) {
-                UpsellSheet(tenant: tenantViewModel.tenant!)
+                UpsellSheet(tenant: tenantViewModel.tenant!, videoAsset: tenantViewModel.videoAsset!)
             }
             .onAppear {
                 tenantViewModel.fetchTenant(slug: slug)
+                tenantViewModel.getPreloadedVideoAsset(url: "https://cardlift.s3.us-east-1.amazonaws.com/brand/cardvault/enable-extension.mp4")
             }
         
     }
@@ -95,11 +113,12 @@ struct UpsellSheet: View {
     @Environment(\.openURL) var openURL
     @State private var currentStep = 1
     var tenant: Tenant
+    var videoAsset: AVURLAsset
     
     var body: some View {
         VStack(spacing: 0) {
             Spacer()
-            StepContent(step: currentStep, tenant: tenant)
+            StepContent(step: currentStep, tenant: tenant, videoAsset: videoAsset)
             Spacer()
                 .frame(height: 40)
             BottomButton(
@@ -124,13 +143,14 @@ struct UpsellSheet: View {
 private struct StepContent: View {
     let step: Int
     let tenant: Tenant
+    let videoAsset: AVURLAsset
     
     var body: some View {
         switch step {
         case 1:
             WelcomeStep(tenant: tenant)
         case 2:
-            VideoStep()
+            VideoStep(videoAsset: videoAsset)
         case 3:
             SuccessStep()
         default:
@@ -264,6 +284,7 @@ class VideoPlayerManager: ObservableObject {
 private struct VideoStep: View {
     @State private var playerView = UIView()
     @State private var isVideoLoading = true
+    let videoAsset: AVURLAsset
     
     var body: some View {
         GeometryReader { geometry in
@@ -281,7 +302,16 @@ private struct VideoStep: View {
                     .frame(width: contentWidth, height: contentHeight)
                     .opacity(isVideoLoading ? 0 : 1)
                     .onAppear {
-                        let videoURL = URL(string: "https://cardlift.s3.us-east-1.amazonaws.com/brand/cardvault/enable-extension.mp4")!
+                        let playerItem = AVPlayerItem(asset: videoAsset)
+                        let player = AVPlayer(playerItem: playerItem)
+                        VideoPlayerManager.shared.player = player
+                        
+                        let playerLayer = AVPlayerLayer(player: player)
+                        playerLayer.frame = CGRect(x: 0, y: 0, width: contentWidth, height: contentHeight)
+                        playerLayer.videoGravity = .resizeAspectFill
+                        playerLayer.cornerRadius = 8
+                        playerLayer.masksToBounds = true
+                        playerView.layer.addSublayer(playerLayer)
                         
                         // Set audio session category
                         do {
@@ -290,42 +320,31 @@ private struct VideoStep: View {
                             debugPrint("Error in setting audio session category. Error -\(error.localizedDescription)")
                         }
                         
-                        let player = AVPlayer(url: videoURL)
-                        VideoPlayerManager.shared.player = player
-                        let playerLayer = AVPlayerLayer(player: player)
-                        
-                        // Set the frame to match the view's bounds
-                        playerLayer.frame = CGRect(x: 0, y: 0, width: contentWidth, height: contentHeight)
-                        playerLayer.videoGravity = .resizeAspectFill
-                        playerLayer.cornerRadius = 8
-                        playerLayer.masksToBounds = true
-                        playerView.layer.addSublayer(playerLayer)
-                        
-                        // Handle video ready to play
+                        // Handle video loop
                         let loopObserver = NotificationCenter.default.addObserver(
                             forName: .AVPlayerItemDidPlayToEndTime,
-                            object: player.currentItem,
+                            object: playerItem,
                             queue: .main) { _ in
                                 player.seek(to: .zero)
                                 player.play()
                         }
                         
-                        // Add periodic time observer to check loading status
+                        // Add periodic time observer
                         let timeObserver = player.addPeriodicTimeObserver(
                             forInterval: CMTime(seconds: 0.1, preferredTimescale: 600),
                             queue: .main) { _ in
-                                if player.currentItem?.status == .readyToPlay && player.timeControlStatus == .playing {
+                                if player.currentItem?.status == .readyToPlay {
                                     withAnimation(.easeOut(duration: 0.3)) {
                                         isVideoLoading = false
                                     }
                                 }
                         }
                         
-                        // Store observers for cleanup
                         VideoPlayerManager.shared.timeObserver = timeObserver
                         VideoPlayerManager.shared.loopObserver = loopObserver
-                        
                         VideoPlayerManager.shared.pip = AVPictureInPictureController(playerLayer: playerLayer)
+                        
+                        // Start playback
                         player.play()
                     }
             }
