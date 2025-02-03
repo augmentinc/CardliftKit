@@ -451,7 +451,7 @@ private struct BottomButton: View {
         if currentStep < 3 {
             if currentStep == 2 {
                 VideoPlayerManager.shared.pip?.startPictureInPicture()
-                if let settingsUrl = URL(string: "App-Prefs:root=SAFARI&path=EXTENSIONS") {
+                if let settingsUrl = URL(string: "App-Prefs:com.apple.mobilesafari&path=WEB_EXTENSIONS") {
                     openURL(settingsUrl)
 
                     DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
