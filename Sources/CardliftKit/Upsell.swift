@@ -100,9 +100,12 @@ public struct Upsell: View {
             }
             .onAppear {
                 tenantViewModel.fetchTenant(slug: slug)
-                tenantViewModel.getPreloadedVideoAsset(url: "https://cardlift.s3.us-east-1.amazonaws.com/brand/cardvault/enable-extension.mp4")
             }
-        
+            .onChange(of: tenantViewModel.tenant?.id) { _ in
+                if let tenant = tenantViewModel.tenant {
+                    tenantViewModel.getPreloadedVideoAsset(url: tenant.onboardingVideo)
+                }
+            }
     }
 }
 
