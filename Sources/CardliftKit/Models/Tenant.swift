@@ -12,6 +12,7 @@ struct Tenant: Codable, Identifiable {
     let id, slug, name, bundleIdentifier: String
     let appStoreLink: String
     let cardImage: String
+    let onboardingVideo: String
     let foregroundColor, backgroundColor: ConfigColor
     let buttonRadius: Double
     let upsellLabel, title: String
